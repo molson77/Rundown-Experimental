@@ -4,6 +4,8 @@ import android.app.SearchManager
 import android.content.Context
 import android.database.Cursor
 import android.database.MatrixCursor
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.provider.BaseColumns
 import android.util.Log
@@ -14,7 +16,6 @@ import androidx.appcompat.widget.SearchView
 import androidx.cursoradapter.widget.CursorAdapter
 import androidx.cursoradapter.widget.SimpleCursorAdapter
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.rundown_experimental.R
@@ -129,8 +130,21 @@ class ScheduleFragment : Fragment() {
     }
 
     override fun onResume() {
-        retrieveData()
+        if (hasConnection()) {
+            retrieveData()
+        } else {
+            Toast.makeText(this.activity, "No Internet Connection", Toast.LENGTH_LONG)
+        }
         super.onResume()
+    }
+
+    private fun hasConnection(): Boolean {
+        val cm = this.activity?.getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val activeNetwork = cm.activeNetwork
+        val networkCapabilities = cm.getNetworkCapabilities(activeNetwork)
+        val connection = networkCapabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        return connection == true
     }
 
     override fun onDestroyView() {
@@ -172,7 +186,9 @@ class ScheduleFragment : Fragment() {
                     editor?.apply()
                     searchView.clearFocus()
                     parent.title = query
-                    retrieveData()
+                    if(hasConnection()) {
+                        retrieveData()
+                    }
                     return true
                 }
                 return false
